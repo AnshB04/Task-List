@@ -74,28 +74,47 @@ app.get("/", async(req, res) => {
     }
 });
 
-app.post("/", async(req, res) => {
+
+
+app.post("/", (req, res) => {
+
     const itemName = req.body.newItem;
+    const listName = req.body.list;
 
     const itemN = new Item({
-        name: itemName,
+        name: itemName
     });
 
-    try {
-        await itemN.save();
+    if (listName === "Today") {
+        itemN.save();
         res.redirect("/");
-    } catch (error) {
-        console.error("Error saving item:", error);
-        res.status(500).json({ error: "An error occurred while saving the item" });
+    } else {
+        List.findOne({ name: listName })
+            .then((foundList) => {
+                foundList.items.push(itemN);
+                foundList.save();
+                res.redirect("/" + listName);
+            });
     }
 });
 
 app.post("/delete", async(req, res) => {
     const checkedItemId = req.body.checkbox;
-
+    const listName = req.body.listName;
     try {
-        await Item.findByIdAndRemove(checkedItemId);
-        res.redirect("/");
+        if (listName === "Today") {
+            await Item.findByIdAndRemove(checkedItemId);
+            res.redirect("/");
+        } else {
+            List.findOneAndUpdate({ name: listName }, { $pull: { items: { _id: checkedItemId } } })
+                .then((foundList) => {
+                    if (foundList) {
+                        res.redirect("/" + listName);
+                    }
+                });
+        }
+
+
     } catch (error) {
         console.error("Error deleting item:", error);
         res.status(500).json({ error: "An error occurred while deleting the item" });
