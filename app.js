@@ -50,6 +50,14 @@ const item3 = new Item({
 
 const defaultItems = [item1, item2, item3];
 
+const listSchema = new mongoose.Schema({
+    name: String,
+    items: [itemsSchema]
+});
+
+const List = mongoose.model("List", listSchema);
+
+
 app.get("/", async(req, res) => {
     try {
         const items = await Item.find().lean();
